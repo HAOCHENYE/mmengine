@@ -1,9 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import datetime
 import os
 import platform
 import warnings
 
 import torch.multiprocessing as mp
+
+from mmengine.registry import DefaultScope
 
 
 def set_multi_processing(mp_start_method: str = 'fork',
@@ -59,3 +62,40 @@ def set_multi_processing(mp_start_method: str = 'fork',
             'being overloaded, please further tune the variable for '
             'optimal performance in your application as needed.')
         os.environ['MKL_NUM_THREADS'] = str(mkl_num_threads)
+
+
+def register_all_modules(init_default_scope: bool = True) -> None:
+    """Register all modules in mmengine into the registries.
+
+    Args:
+        init_default_scope (bool): Whether initialize the mmengine default scope.
+            When `init_default_scope=True`, the global default scope will be
+            set to `mmengine`, and all registries will build modules from mmengine's
+            registry node. To understand more about the registry, please refer
+            to https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/registry.md
+            Defaults to True.
+    """  # noqa
+    import mmengine.dataset  # noqa: F401,F403
+    import mmengine.evaluator  # noqa: F401,F403
+    import mmengine.hooks  # noqa: F401,F403
+    import mmengine.model  # noqa: F401,F403
+    import mmengine.optim  # noqa: F401,F403
+    import mmengine.runner  # noqa: F401,F403
+    import mmengine.visualization  # noqa: F401,F403
+
+    if init_default_scope:
+        never_created = DefaultScope.get_current_instance() is None \
+                        or not DefaultScope.check_instance_created('mmengine')
+        if never_created:
+            DefaultScope.get_instance('mmengine', scope_name='mmengine')
+            return
+        current_scope = DefaultScope.get_current_instance()
+        if current_scope.scope_name != 'mmengine':
+            warnings.warn('The current default scope '
+                          f'"{current_scope.scope_name}" is not "mmengine", '
+                          '`register_all_modules` will force the current'
+                          'default scope to be "mmengine". If this is not '
+                          'expected, please set `init_default_scope=False`.')
+            # avoid name conflict
+            new_instance_name = f'mmengine-{datetime.datetime.now()}'
+            DefaultScope.get_instance(new_instance_name, scope_name='mmengine')
