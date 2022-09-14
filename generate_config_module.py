@@ -16,9 +16,8 @@ class Require(object):
 
 def get_all_arguments(cls,
                       args,
-                      kwonlyargs,
-                      varargs=None,
-                      varkwargs=None):
+                      kwonlyargs):
+
     if cls in builtins.__dict__.values():
         return
 
