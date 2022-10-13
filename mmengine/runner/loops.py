@@ -41,8 +41,8 @@ class EpochBasedTrainLoop(BaseLoop):
             val_interval: int = 1,
             dynamic_intervals: Optional[List[Tuple[int, int]]] = None) -> None:
         super().__init__(runner, dataloader)
-        self._max_epochs = max_epochs
-        self._max_iters = max_epochs * len(self.dataloader)
+        self._max_epochs = int(max_epochs)
+        self._max_iters = int(max_epochs) * len(self.dataloader)
         self._epoch = 0
         self._iter = 0
         self.val_begin = val_begin
@@ -206,7 +206,7 @@ class IterBasedTrainLoop(BaseLoop):
             val_interval: int = 1000,
             dynamic_intervals: Optional[List[Tuple[int, int]]] = None) -> None:
         super().__init__(runner, dataloader)
-        self._max_iters = max_iters
+        self._max_iters = int(max_iters)
         self._max_epochs = 1  # for compatibility with EpochBasedTrainLoop
         self._epoch = 0
         self._iter = 0

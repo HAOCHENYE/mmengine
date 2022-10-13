@@ -396,6 +396,7 @@ class TestRunner(TestCase):
         )
         self.epoch_based_cfg = Config(epoch_based_cfg)
         self.iter_based_cfg = copy.deepcopy(self.epoch_based_cfg)
+        self.iter_based_cfg.log_processor = dict(by_epoch=False)
         self.iter_based_cfg.train_dataloader = dict(
             dataset=dict(type='ToyDataset'),
             sampler=dict(type='InfiniteSampler', shuffle=True),
