@@ -481,6 +481,13 @@ class PretrainedInit:
         from mmengine.runner.checkpoint import (_load_checkpoint_with_prefix,
                                                 load_checkpoint,
                                                 load_state_dict)
+        comparison_dict = {}
+        for sub_module in module.modules():
+            comparison_dict[sub_module] = [
+                parameter.detach().copy()
+                for parameter in sub_module.parameters()
+            ]
+
         logger = MMLogger.get_instance('mmengine')
         if self.prefix is None:
             print_log(f'load model from: {self.checkpoint}', logger=logger)
@@ -497,6 +504,11 @@ class PretrainedInit:
             state_dict = _load_checkpoint_with_prefix(
                 self.prefix, self.checkpoint, map_location=self.map_location)
             load_state_dict(module, state_dict, strict=False, logger=logger)
+
+        for sub_module in module.modules():
+            if not all((p == _p).all() for p, _p in zip(
+                    comparison_dict[sub_module], sub_module.parameters())):
+                sub_module._is_init = True
 
         if hasattr(module, '_params_init_info'):
             update_init_info(module, init_info=self._get_init_info())
