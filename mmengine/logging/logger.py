@@ -253,9 +253,8 @@ def print_log(msg,
 
     Args:
         msg (str): The message to be logged.
-        logger (Logger or str, optional): If the type of logger is
-        ``logging.Logger``, we directly use logger to log messages.
-            Some special loggers are:
+        logger (Logger or str, optional): The logger to be used. Some special
+            loggers are:
 
             - "silent": No message will be printed.
             - "current": Use latest created logger to log message.
@@ -263,6 +262,7 @@ def print_log(msg,
               will log message if it has been created, otherwise ``print_log``
               will raise a `ValueError`.
             - None: The `print()` method will be used to print log messages.
+
         level (int): Logging level. Only available when `logger` is a Logger
             object, "current", or a created logger instance name.
     """
