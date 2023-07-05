@@ -40,11 +40,10 @@ else:
     import re  # type: ignore
 
 
-def _lazy2string(cfg_dict):
+def _lazy2string(cfg_dict, dict_type=None):
     if isinstance(cfg_dict, dict):
-        return type(cfg_dict)(
-            {k: _lazy2string(v)
-             for k, v in cfg_dict.items()})
+        dict_type = dict_type or type(cfg_dict)
+        return dict_type({k: _lazy2string(v) for k, v in cfg_dict.items()})
     elif isinstance(cfg_dict, (tuple, list)):
         return type(cfg_dict)(_lazy2string(v) for v in cfg_dict)
     elif isinstance(cfg_dict, (LazyAttr, LazyObject)):
@@ -284,7 +283,7 @@ class ConfigDict(Dict):
     def to_dict(self):
         """Convert the ConfigDict to a normal dictionary recursively, and keep
         the ``LazyObject`` or ``LazyAttr`` object not built."""
-        return _lazy2string(self)
+        return _lazy2string(self, dict_type=dict)
 
 
 def add_args(parser: ArgumentParser,
