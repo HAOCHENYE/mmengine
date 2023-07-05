@@ -40,6 +40,19 @@ else:
     import re  # type: ignore
 
 
+def _lazy2string(cfg_dict):
+    if isinstance(cfg_dict, dict):
+        return type(cfg_dict)(
+            {k: _lazy2string(v)
+             for k, v in cfg_dict.items()})
+    elif isinstance(cfg_dict, (tuple, list)):
+        return type(cfg_dict)(_lazy2string(v) for v in cfg_dict)
+    elif isinstance(cfg_dict, (LazyAttr, LazyObject)):
+        return f'{cfg_dict.module}.{str(cfg_dict)}'
+    else:
+        return cfg_dict
+
+
 class ConfigDict(Dict):
     """A dictionary for config which has the same interface as python's built-
     in dictionary and can be used as a normal dictionary.
@@ -249,7 +262,7 @@ class ConfigDict(Dict):
         for key, value in merged.items():
             self[key] = value
 
-    def to_dict(self):
+    def _to_lazy_dict(self):
         """Convert the ConfigDict to a normal dictionary recursively, and keep
         the ``LazyObject`` or ``LazyAttr`` object not built."""
 
@@ -267,6 +280,11 @@ class ConfigDict(Dict):
                 return data
 
         return _to_dict(self)
+
+    def to_dict(self):
+        """Convert the ConfigDict to a normal dictionary recursively, and keep
+        the ``LazyObject`` or ``LazyAttr`` object not built."""
+        return _lazy2string(self)
 
 
 def add_args(parser: ArgumentParser,
@@ -441,7 +459,7 @@ class Config:
                 raise e
             finally:
                 ConfigDict.lazy = False
-            for key, value in list(cfg_dict.to_dict().items()):
+            for key, value in list(cfg_dict._to_lazy_dict().items()):
                 if isinstance(value, (types.FunctionType, types.ModuleType)):
                     cfg_dict.pop(key)
 
@@ -1599,7 +1617,7 @@ class Config:
     def _to_lazy_dict(self, keep_imported: bool = False) -> dict:
         """Convert config object to dictionary and filter the imported
         object."""
-        res = self._cfg_dict.to_dict()
+        res = self._cfg_dict._to_lazy_dict()
         if hasattr(self, '_imported_names') and not keep_imported:
             res = {
                 key: value
@@ -1619,20 +1637,7 @@ class Config:
         objects will be converted to a string like ``torch.optim.SGD``
         """
         _cfg_dict = self._to_lazy_dict(keep_imported)
-
-        def lazy2string(cfg_dict):
-            if isinstance(cfg_dict, dict):
-                return type(cfg_dict)(
-                    {k: lazy2string(v)
-                     for k, v in cfg_dict.items()})
-            elif isinstance(cfg_dict, (tuple, list)):
-                return type(cfg_dict)(lazy2string(v) for v in cfg_dict)
-            elif isinstance(cfg_dict, (LazyAttr, LazyObject)):
-                return f'{cfg_dict.module}.{str(cfg_dict)}'
-            else:
-                return cfg_dict
-
-        return lazy2string(_cfg_dict)
+        return _lazy2string(_cfg_dict)
 
 
 class DictAction(Action):
