@@ -135,7 +135,7 @@ def main():
         # since PyTorch consider the custom op before it could not handle the
         # backward graph modification
         colo_op_impl(torch.Tensor.add_)(torch.add)
-        strategy = dict(type='ColossalAIStrategy')
+        strategy = dict(type='ColossalAIStrategy', lazy_build_model=True)
         optim_wrapper = dict(optimizer=dict(type='HybridAdam', lr=1e-3))
     else:
         strategy = None

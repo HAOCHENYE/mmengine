@@ -12,6 +12,7 @@ try:
     import colossalai.nn.optimizer as colo_optimizer
     from colossalai.booster import Booster
     from colossalai.interface import ModelWrapper
+    from colossalai.lazy import LazyInitContext
 except Exception as e:  # noqa: F841
     colossalai = None
     colo_precision = None
@@ -243,6 +244,7 @@ class ColossalAIStrategy(BaseStrategy):
         mixed_precision: Union[str, dict, None] = None,
         plugin: str = 'gemini',
         model_wrapper: Optional[dict] = None,
+        lazy_build_model: bool = False,
         **kwargs,
     ):
         if colossalai is None:
@@ -261,6 +263,7 @@ class ColossalAIStrategy(BaseStrategy):
             plugin = self._build_plugin(plugin)
         self.booster = Booster(mixed_precision=mixed_precision, plugin=plugin)
         self.model_wrapper = model_wrapper
+        self.lazy_build_model = lazy_build_model
 
     def prepare(
         self,
@@ -299,8 +302,12 @@ class ColossalAIStrategy(BaseStrategy):
         if dispatch_kwargs is not None:
             self.dispatch_kwargs.update(dispatch_kwargs)
 
-        model = self.build_model(model)
-        model = self._init_model_weights(model)
+        if not self.lazy_build_model:
+            model = self.build_model(model)
+            model = self._init_model_weights(model)
+        else:
+            with self.lazy_init_context():
+                model = self.build_model(model)
 
         # optim_wrapper is required by booster
         if optim_wrapper is not None and isinstance(optim_wrapper, dict):
@@ -551,3 +558,14 @@ class ColossalAIStrategy(BaseStrategy):
     ):
         init_dist(
             launcher, backend, init_backend='colossalai', config=self.config)
+
+    @staticmethod
+    @contextmanager
+    def lazy_init_context(default_device: Union[torch.device, str, int,
+                                                None] = None):
+        with LazyInitContext(default_device=default_device):
+            yield
+
+    @staticmethod
+    def materialize(module: nn.Module):
+        return LazyInitContext.materialize(module)
