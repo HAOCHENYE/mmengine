@@ -471,7 +471,7 @@ class ColossalAIStrategy(BaseStrategy):
         if isinstance(plugin, str):
             if plugin == 'gemini':
                 plugin = colo_plugin.GeminiPlugin(
-                    precision='bf16', placement_policy='cuda')
+                    precision='bf16', placement_policy='auto')
             elif plugin == 'lowlevel-zero':
                 plugin = colo_plugin.LowLevelZeroPlugin()
             else:
